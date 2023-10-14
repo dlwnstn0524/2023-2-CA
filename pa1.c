@@ -226,12 +226,14 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							if (strcmp(tokens[1], registerArray[j].name) == 0){
 								// .name은 이미 정수니까 strtol 안 해도 됨
 								rs = registerArray[j].num;
-								reg = reg | rs << 21;
+								rs = rs << 21;
+								reg = reg | rs;
 							}
 							// rt
 							if (strcmp(tokens[2], registerArray[j].name) == 0){
 								rt = registerArray[j].num;
-								reg = reg | rt << 16;
+								rt = rt << 16;
+								reg = reg | rt;
 							}
 						}
 					}
