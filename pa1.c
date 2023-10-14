@@ -154,6 +154,7 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 			
 			switch(assemblyArray[i].type){
 				case 'R':
+
 					// 예외적인 shift 연산은 따로 분류
 					if(strcmp(tokens[0], "sll") == 0 || strcmp(tokens[0], "srl") == 0 || strcmp(tokens[0], "sra") == 0){
 						int shamt = 0;
@@ -190,7 +191,7 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 					opcode = strtol(assemblyArray[i].op, &end, 16);
 					reg = reg | opcode << 26;
 					// lw, sw
-					if (assemblyArray[i].name == "lw"){
+					if(strcmp(assemblyArray[i].name, "lw") == 0){
 						// op rt constant rs
 						for (int j=0; j<32; j++){
 							// rt
@@ -208,32 +209,31 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 								rs = registerArray[j].num;
 								reg = reg | rs;
 							}
-
 						}
-					}
-					//(regi_t를 처음부터 끝까지 돌면서 rs, rt, rd 찾기, 가운데 5-5 채우기)
-					for (int j=0; j<32; j++){
-						// rs
-						if (strcmp(tokens[1], registerArray[j].name) == 0){
-							// .name은 이미 정수니까 strtol 안 해도 됨
-							rs = registerArray[j].num;
-							reg = reg | rs << 21;
+					} else {
+						//(regi_t를 처음부터 끝까지 돌면서 rs, rt, rd 찾기, 가운데 5-5 채우기)
+						for (int j=0; j<32; j++){
+							// rs
+							if (strcmp(tokens[1], registerArray[j].name) == 0){
+								// .name은 이미 정수니까 strtol 안 해도 됨
+								rs = registerArray[j].num;
+								reg = reg | rs << 21;
+							}
+							// rt
+							if (strcmp(tokens[2], registerArray[j].name) == 0){
+								rt = registerArray[j].num;
+								reg = reg | rt << 16;
+							}
+							// constant&address
+							if (strncmp(tokens[3], "0x", 2) == 0){
+								constant = strtol(tokens[3], &end, 16);
+								reg = reg | constant;
+							}
+							else {
+								constant = strtol(tokens[3], &end, 10);
+								reg = reg | constant;
+							} 
 						}
-						// rt
-						if (strcmp(tokens[2], registerArray[j].name) == 0){
-							rt = registerArray[j].num;
-							reg = reg | rt << 16;
-						}
-						// constant&address
-						if (strncmp(tokens[3], "0x", 2) == 0){
-							constant = strtol(tokens[3], &end, 16);
-							reg = reg | constant;
-						}
-						else {
-							constant = strtol(tokens[3], &end, 10);
-							reg = reg | constant;
-						} 
-						
 					}
 					break;
 				default:
