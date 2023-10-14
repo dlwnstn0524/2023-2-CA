@@ -213,14 +213,14 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 					} else {
 						//(regi_t를 처음부터 끝까지 돌면서 rs, rt, rd 찾기, 가운데 5-5 채우기)
 						// constant&address
-							if (strncmp(tokens[3], "0x", 2) == 0){
-								constant = strtol(tokens[3], &end, 16);
-								reg = reg | constant;
-							}
-							else {
-								constant = strtol(tokens[3], &end, 10);
-								reg = reg | constant;
-							} 
+						if (strncmp(tokens[3], "0x", 2) == 0){
+							constant = strtol(tokens[3], &end, 16);
+							reg = reg | constant;
+						}
+						else if(strncmp(tokens[3], "0x", 2) != 0){
+							constant = strtol(tokens[3], &end, 10);
+							reg = reg | constant;
+						} 
 						for (int j=0; j<32; j++){
 							// rs
 							if (strcmp(tokens[1], registerArray[j].name) == 0){
