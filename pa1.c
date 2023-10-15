@@ -76,7 +76,7 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 		char *name; // 원소가 다 문자열이니까 시작 주소를 저장한 것, 근데 원소들의 길이가 다 다르니까 차지하는 공간도 다르니까 주소를 저장!! 그 집에 누가 사는지는 중요하지 않음 집 주소가 중요
 		char *op;
 		char *funct;
-		char type;
+		char type; // format으로 고치기
 	} inst_t;
 
 	typedef struct regi_struct{
@@ -138,6 +138,11 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 		{"fp", 30},
 		{"ra", 31}
 	};
+
+	char change_to_Binary(long constant) {
+		constant = -constant;
+		// 
+	}
 	
 
 	// *opcode 변환* x
@@ -148,25 +153,43 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 			int rs = 0;
 			int rt = 0;
 			int rd = 0;
-			int constant = 0;
-			// int shamt = 0;
-			char* end; // strtol
+			int constant = 0; // immediate가 더 낫나?
+			//char* end; // strtol
 			
 			switch(assemblyArray[i].type){
 				case 'R':
 
-					// 예외적인 shift 연산은 따로 분류
-					if(strcmp(tokens[0], "sll") == 0 || strcmp(tokens[0], "srl") == 0 || strcmp(tokens[0], "sra") == 0){
-						int shamt = 0;
-						shamt = strtol(tokens[3], &end, 16);
-						reg = reg | shamt << 6;
-					}
-					opcode = strtol(assemblyArray[i].op, &end, 16); // 16진수로 반환하는 이유: assemblyarray에 16진수 형태의 문자열이 저장되어있기 때문에
-					funct = strtol(assemblyArray[i].funct, &end, 16);
+					opcode = strtol(assemblyArray[i].op, NULL, 16); // 16진수로 반환하는 이유: assemblyarray에 16진수 형태의 문자열이 저장되어있기 때문에
+					funct = strtol(assemblyArray[i].funct, NULL, 16);
 					reg = reg | funct; // bit mask, reg에 funct 값 저장
 					reg = reg | opcode << 26; // 레지스터는 32비트이므로 이를 맞춰주기 위해 다른 변수들도 (필요에 따라 앞이 0으로 채워진) 32 비트로 본다
 
-					//(regi_t를 처음부터 끝까지 돌면서 rs, rt, rd 찾기, 가운데 5-5-5-5 채우기)
+					// shift
+					if (strcmp(tokens[0], "sll") == 0 || strcmp(tokens[0], "srl") == 0 || strcmp(tokens[0], "sra") == 0){
+						int shamt = 0;
+						if (strncmp(tokens[3], "0x", 2) == 0){
+							shamt = strtol(tokens[3], NULL, 16); // &end는 "1010 0100" 여러개의 문자열 구분되어 있을 때 사용
+						}
+						else {
+							shamt = strtol(tokens[3], NULL, 10);
+						}
+						reg = reg | shamt << 6;
+
+						for (int j=0; j<32; j++) {
+							// rt
+							if (strcmp(tokens[2], registerArray[j].name) == 0){ 
+								rt = registerArray[j].num;
+								reg = reg | rt << 16; 
+							} 
+							// rd
+							if (strcmp(tokens[1], registerArray[j].name) ==0){
+								rd = registerArray[j].num;
+								reg = reg | rd << 11;
+							}
+						}
+					}	
+
+					// shift 아닌 경우
 					for (int j=0; j<32; j++) {
 						//rs
 						if (strcmp(tokens[2], registerArray[j].name) == 0){ 
@@ -183,66 +206,121 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							rd = registerArray[j].num;
 							reg = reg | rd << 11;
 						}
-					}
+					}				
 					break;
 
 				case 'I':
 					// op
-					opcode = strtol(assemblyArray[i].op, &end, 16);
+					opcode = strtol(assemblyArray[i].op, NULL, 16);
 					reg = reg | opcode << 26;
-					// lw, sw
-					if(strcmp(assemblyArray[i].name, "lw") == 0){
+
+					// lw
+					if (strcmp(assemblyArray[i].name, "lw") == 0){
 						// op rt constant rs
-						for (int j=0; j<32; j++){
+						for (int k=0; k<32; k++){
 							// rt
-							if (strcmp(tokens[1], registerArray[j].name) == 0){
-								rt = registerArray[j].num;
-								reg = reg | rt << 21;
+							if (strcmp(tokens[1], registerArray[k].name) == 0){
+								rt = registerArray[k].num;
+								reg = reg | rt << 16;
 							}
 							// constant
 							if (strncmp(tokens[2], "0x", 2) == 0){
-								constant = strtol(tokens[2], &end, 16);
-								reg = reg | constant << 16;
+								constant = strtol(tokens[2], NULL, 16);
+								reg = reg | constant;
 							}
 							// rs
-							if (strcmp(tokens[3], registerArray[j].name) == 0){
-								rs = registerArray[j].num;
-								reg = reg | rs;
+							if (strcmp(tokens[3], registerArray[k].name) == 0){
+								rs = registerArray[k].num;
+								reg = reg | rs << 21;
+							}
+
+						}
+					}
+
+					// sw
+					if (strcmp(assemblyArray[i].name, "sw") == 0){
+						// op rt constant rs
+						for (int k=0; k<32; k++){
+							// rt
+							if (strcmp(tokens[1], registerArray[k].name) == 0){
+								rt = registerArray[k].num;
+								reg = reg | rt << 16;
+							}
+							// rs
+							if (strcmp(tokens[3], registerArray[k].name) == 0){
+								rs = registerArray[k].num;
+								reg = reg | rs << 21;
+							}
+							// constant
+							if (strncmp(tokens[2], "-0x", 3) == 0){
+							// if (tokens[2] < 0){ 문자열이라 음수인지 알 수 없음!!!!!!!
+								constant = strtol(tokens[2], NULL, 16);
+								// 음수를 2의 보수법을 사용해 이진수로 변환해주는 코드!!!!!!!
+								change_to_Binary(constant);
+								// 	비트 반전
+								// +1
+								reg = reg | constant;
 							}
 						}
-					} else {
-						//(regi_t를 처음부터 끝까지 돌면서 rs, rt, rd 찾기, 가운데 5-5 채우기)
-						// constant&address
-						if (strncmp(tokens[3], "0x", 2) == 0 || strncmp(tokens[3], "-0x", 3) == 0){
-							constant = strtol(tokens[3], &end, 16);
-							reg = reg | constant;
-						}
-						else if(strncmp(tokens[3], "0x", 2) != 0){
-							constant = strtol(tokens[3], &end, 10);
-							reg = reg | constant;
-						} 
+					}
+
+					//beq, bne
+					if (strcmp(assemblyArray[i].name, "beq") == 0 || (strcmp(assemblyArray[i].name, "bne") == 0)){
 						for (int j=0; j<32; j++){
 							// rs
 							if (strcmp(tokens[1], registerArray[j].name) == 0){
-								// .name은 이미 정수니까 strtol 안 해도 됨
 								rs = registerArray[j].num;
-								rs = rs << 21;
-								reg = reg | rs;
+								reg = reg | rs << 21;
 							}
 							// rt
 							if (strcmp(tokens[2], registerArray[j].name) == 0){
 								rt = registerArray[j].num;
-								rt = rt << 16;
-								reg = reg | rt;
+								reg = reg | rt << 16;
 							}
+							// constant
+							if (strncmp(tokens[3], "0x", 2) == 0){
+								constant = strtol(tokens[3], NULL, 16);
+								// printf("constant: %d", constant);
+								reg = reg | constant;
+							}
+							else {
+								constant = strtol(tokens[3], NULL, 10);
+								reg = reg | constant;
+							}
+
 						}
+					}
+				
+					// andi, addi, ori 음수 처리 필요!!!
+					for (int j=0; j<32; j++){
+						// rs
+						if (strcmp(tokens[1], registerArray[j].name) == 0){
+							// .name은 이미 정수니까 strtol 안 해도 됨
+							rs = registerArray[j].num;
+							reg = reg | rs << 21;
+						}
+						// rt
+						if (strcmp(tokens[2], registerArray[j].name) == 0){
+							rt = registerArray[j].num;
+							reg = reg | rt << 16;
+						}
+						// constant&address
+						if (strncmp(tokens[3], "0x", 2) == 0){
+							constant = strtol(tokens[3], NULL, 16);
+							reg = reg | constant;
+						}
+						else {
+							constant = strtol(tokens[3], NULL, 10);
+							reg = reg | constant;
+						} 
+								
 					}
 					break;
 				default:
 					break;
 			}
 
-			break;
+			//break;
 		}
 	} 
 
