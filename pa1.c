@@ -310,7 +310,7 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							reg = reg | rt << 16;
 						}
 						// constant&address
-						if (strncmp(tokens[3], "0x", 2) == 0){
+						if (strncmp(tokens[3], "0x", 2) == 0 || strncmp(tokens[3], "-0x", 3) == 0){
 							constant = strtol(tokens[3], NULL, 16);
 							reg = reg | constant;
 						}
