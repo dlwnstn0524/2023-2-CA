@@ -248,35 +248,7 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							reg = reg | constant;
 						}
 						break;
-					}
-
-					//beq, bne
-					if (strcmp(assemblyArray[i].name, "beq") == 0 || (strcmp(assemblyArray[i].name, "bne") == 0)){
-						for (int j=0; j<32; j++){
-							// rs
-							if (strcmp(tokens[1], registerArray[j].name) == 0){
-								rs = registerArray[j].num;
-								reg = reg | rs << 21;
-							}
-							// rt
-							if (strcmp(tokens[2], registerArray[j].name) == 0){
-								rt = registerArray[j].num;
-								reg = reg | rt << 16;
-							}
-						}
-						// constant
-						if (strncmp(tokens[3], "0x", 2) == 0){
-							constant = strtol(tokens[3], NULL, 16);
-							// printf("constant: %d", constant);
-							reg = reg | constant;
-						}
-						else {
-							constant = strtol(tokens[3], NULL, 10);
-							reg = reg | constant;
-						}
-						break;
-					}
-					else{
+					} else{
 						// andi, addi, ori 음수 처리 필요!!!
 						for (int j=0; j<32; j++){
 							// rs
@@ -303,7 +275,6 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 						}
 						break;
 					}
-					
 				default:
 					break;
 			}
