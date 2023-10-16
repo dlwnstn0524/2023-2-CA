@@ -194,26 +194,29 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 								reg = reg | rd << 11;
 							}
 						}
-					}	
+						break;
+					}	else {
+						// shift 아닌 경우
+						for (int j=0; j<32; j++) {
+							//rs
+							if (strcmp(tokens[2], registerArray[j].name) == 0){ 
+								rs = registerArray[j].num;
+								reg = reg | rs << 21; 
+							} 
+							// rt
+							if (strcmp(tokens[3], registerArray[j].name) == 0){
+								rt = registerArray[j].num;
+								reg = reg | rt << 16;
+							}
+							// rd
+							if (strcmp(tokens[1], registerArray[j].name) == 0){
+								rd = registerArray[j].num;
+								reg = reg | rd << 11;
+							}
+						}	
+					}
 
-					// shift 아닌 경우
-					for (int j=0; j<32; j++) {
-						//rs
-						if (strcmp(tokens[2], registerArray[j].name) == 0){ 
-							rs = registerArray[j].num;
-							reg = reg | rs << 21; 
-						} 
-						// rt
-						if (strcmp(tokens[3], registerArray[j].name) == 0){
-							rt = registerArray[j].num;
-							reg = reg | rt << 16;
-						}
-						// rd
-						if (strcmp(tokens[1], registerArray[j].name) == 0){
-							rd = registerArray[j].num;
-							reg = reg | rd << 11;
-						}
-					}				
+								
 					break;
 
 				case 'I':
