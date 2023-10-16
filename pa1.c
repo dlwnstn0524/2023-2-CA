@@ -67,6 +67,17 @@ typedef unsigned char bool;
 // R: opcode(6) + rs(5) + rt(5) + rd(5) + shamt(5) + funct(6)
 // I: opcode(6) + rs(5) + rt(5) + constant|address(16)
 // J: opcode(6) + address(26)
+
+// 반환형 int or long????
+int change_to_Binary(long constant) {
+	constant = -constant; // 절댓값
+	// constant는 16진숭
+	// 1의 보수
+	constant = ~constant;
+	constant++;
+	return constant;
+}	
+
 static unsigned int translate(int nr_tokens, char *tokens[])
 {
 	/* TODO:
@@ -139,11 +150,6 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 		{"ra", 31}
 	};
 
-	char change_to_Binary(long constant) {
-		constant = -constant;
-		// 
-	}
-	
 
 	// *opcode 변환* x
 	for (int i=0; i<15; i++) { // 명령어 개수만큼 반복 -> 전체를 탐색
@@ -153,7 +159,8 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 			int rs = 0;
 			int rt = 0;
 			int rd = 0;
-			int constant = 0; // immediate가 더 낫나?
+			// int constant = 0; // immediate가 더 낫나?
+			long constant;
 			//char* end; // strtol
 			
 			switch(assemblyArray[i].type){
@@ -253,12 +260,10 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							}
 							// constant
 							if (strncmp(tokens[2], "-0x", 3) == 0){
-							// if (tokens[2] < 0){ 문자열이라 음수인지 알 수 없음!!!!!!!
 								constant = strtol(tokens[2], NULL, 16);
 								// 음수를 2의 보수법을 사용해 이진수로 변환해주는 코드!!!!!!!
-								change_to_Binary(constant);
-								// 	비트 반전
-								// +1
+								constant = change_to_Binary(constant); // 표현법만 다른 거지 결국 똑같은 짓 한거임
+
 								reg = reg | constant;
 							}
 						}
@@ -309,6 +314,13 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							constant = strtol(tokens[3], NULL, 16);
 							reg = reg | constant;
 						}
+						/* 음수 처리 안 됨
+						else if (strncmp(tokens[2], "-0x", 3) == 0){
+							constant = strtol(tokens[2], NULL, 16);
+							constant = change_to_Binary(constant);
+							reg = reg | constant;
+						}
+						*/
 						else {
 							constant = strtol(tokens[3], NULL, 10);
 							reg = reg | constant;
