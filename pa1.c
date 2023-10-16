@@ -224,31 +224,8 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 					opcode = strtol(assemblyArray[i].op, NULL, 16);
 					reg = reg | opcode << 26;
 
-					// lw
-					if (strcmp(assemblyArray[i].name, "lw") == 0){
-						// op rt constant rs
-						for (int k=0; k<32; k++){
-							// rt
-							if (strcmp(tokens[1], registerArray[k].name) == 0){
-								rt = registerArray[k].num;
-								reg = reg | rt << 16;
-							}
-							// constant
-							if (strncmp(tokens[2], "0x", 2) == 0){
-								constant = strtol(tokens[2], NULL, 16);
-								reg = reg | constant;
-							}
-							// rs
-							if (strcmp(tokens[3], registerArray[k].name) == 0){
-								rs = registerArray[k].num;
-								reg = reg | rs << 21;
-							}
-
-						}
-					}
-
-					// sw
-					if (strcmp(assemblyArray[i].name, "sw") == 0){
+					// lw, sw
+					if (strcmp(assemblyArray[i].name, "lw") == 0 || strcmp(assemblyArray[i].name, "sw") == 0){
 						// op rt constant rs
 						for (int k=0; k<32; k++){
 							// rt
@@ -261,15 +238,15 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 								rs = registerArray[k].num;
 								reg = reg | rs << 21;
 							}
-							// constant
-							if (strncmp(tokens[2], "-0x", 3) == 0){
-								constant = strtol(tokens[2], NULL, 16);
-								// 음수를 2의 보수법을 사용해 이진수로 변환해주는 코드!!!!!!!
-								constant = change_to_Binary(constant); // 표현법만 다른 거지 결국 똑같은 짓 한거임
-
-								reg = reg | constant;
-							}
 						}
+						if(strncmp(tokens[2], "0x", 2) == 0 || strncmp(tokens[2], "-0x", 3) == 0){
+							constant = strtol(tokens[2], NULL, 16);
+							reg = reg | constant;
+						}else{
+							constant = strtol(tokens[2], NULL, 10);
+							reg = reg | constant;
+						}
+						break;
 					}
 
 					//beq, bne
@@ -285,52 +262,53 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 								rt = registerArray[j].num;
 								reg = reg | rt << 16;
 							}
-							// constant
-							if (strncmp(tokens[3], "0x", 2) == 0){
-								constant = strtol(tokens[3], NULL, 16);
-								// printf("constant: %d", constant);
-								reg = reg | constant;
-							}
-							else {
-								constant = strtol(tokens[3], NULL, 10);
-								reg = reg | constant;
-							}
-
 						}
-					}
-				
-					// andi, addi, ori 음수 처리 필요!!!
-					for (int j=0; j<32; j++){
-						// rs
-						if (strcmp(tokens[1], registerArray[j].name) == 0){
-							// .name은 이미 정수니까 strtol 안 해도 됨
-							rs = registerArray[j].num;
-							reg = reg | rs << 21;
-						}
-						// rt
-						if (strcmp(tokens[2], registerArray[j].name) == 0){
-							rt = registerArray[j].num;
-							reg = reg | rt << 16;
-						}
-						// constant&address
-						if (strncmp(tokens[3], "0x", 2) == 0){
+						// constant
+						if (strncmp(tokens[3], "0x", 2) == 0 || strncmp(tokens[3], "-0x", 3) == 0){
 							constant = strtol(tokens[3], NULL, 16);
+							// printf("constant: %d", constant);
 							reg = reg | constant;
 						}
-						/* 음수 처리 안 됨
-						else if (strncmp(tokens[2], "-0x", 3) == 0){
-							constant = strtol(tokens[2], NULL, 16);
-							constant = change_to_Binary(constant);
-							reg = reg | constant;
-						}
-						*/
 						else {
 							constant = strtol(tokens[3], NULL, 10);
 							reg = reg | constant;
-						} 
-								
+						}
+						break;
 					}
-					break;
+					else{
+						// andi, addi, ori 음수 처리 필요!!!
+						for (int j=0; j<32; j++){
+							// rs
+							if (strcmp(tokens[1], registerArray[j].name) == 0){
+								// .name은 이미 정수니까 strtol 안 해도 됨
+								rs = registerArray[j].num;
+								reg = reg | rs << 21;
+							}
+							// rt
+							if (strcmp(tokens[2], registerArray[j].name) == 0){
+								rt = registerArray[j].num;
+								reg = reg | rt << 16;
+							}
+							// constant&address
+							if (strncmp(tokens[3], "0x", 2) == 0){
+								constant = strtol(tokens[3], NULL, 16);
+								reg = reg | constant;
+							}
+							/* 음수 처리 안 됨
+							else if (strncmp(tokens[2], "-0x", 3) == 0){
+								constant = strtol(tokens[2], NULL, 16);
+								constant = change_to_Binary(constant);
+								reg = reg | constant;
+							}
+							*/
+							else {
+								constant = strtol(tokens[3], NULL, 10);
+								reg = reg | constant;
+							}		
+						}
+						break;
+					}
+					
 				default:
 					break;
 			}
