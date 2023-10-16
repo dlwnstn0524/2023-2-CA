@@ -241,6 +241,7 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 						}
 						if(strncmp(tokens[2], "0x", 2) == 0 || strncmp(tokens[2], "-0x", 3) == 0){
 							constant = strtol(tokens[2], NULL, 16);
+							constant = 0x0000ffff & constant;
 							reg = reg | constant;
 						}else{
 							constant = strtol(tokens[2], NULL, 10);
