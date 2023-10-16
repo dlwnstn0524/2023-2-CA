@@ -288,23 +288,16 @@ static unsigned int translate(int nr_tokens, char *tokens[])
 							if (strcmp(tokens[2], registerArray[j].name) == 0){
 								rt = registerArray[j].num;
 								reg = reg | rt << 16;
-							}
-							// constant&address
-							if (strncmp(tokens[3], "0x", 2) == 0){
-								constant = strtol(tokens[3], NULL, 16);
-								reg = reg | constant;
-							}
-							/* 음수 처리 안 됨
-							else if (strncmp(tokens[2], "-0x", 3) == 0){
-								constant = strtol(tokens[2], NULL, 16);
-								constant = change_to_Binary(constant);
-								reg = reg | constant;
-							}
-							*/
-							else {
-								constant = strtol(tokens[3], NULL, 10);
-								reg = reg | constant;
-							}		
+							}	
+						}
+						// constant&address
+						if (strncmp(tokens[3], "0x", 2) == 0 || strncmp(tokens[3], "-0x", 3) == 0){
+							constant = strtol(tokens[3], NULL, 16);
+							reg = reg | constant;
+						}
+						else {
+							constant = strtol(tokens[3], NULL, 10);
+							reg = reg | constant;
 						}
 						break;
 					}
